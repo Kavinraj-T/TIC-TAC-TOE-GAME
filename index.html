@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multiplayer Tic Tac Toe</title>
+
+<style>
+/* --- CYBERPUNK GAMING THEME CSS --- */
+body {
+    background-image: url("images.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 100vh;
+    color: #ffffff;
+    overflow-x: hidden;
+}
+
+/* Dark atmospheric overlay */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(10,10,18,0.6) 0%, rgba(5,5,10,0.85) 100%);
+    z-index: -1;
+}
+
+/* MAIN CONTAINERS (Glassmorphic Styling) */
+.lobby-box {
+    background: rgba(6, 6, 14, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    padding: 35px 25px;
+    border-radius: 20px;
+    text-align: center;
+    width: 340px;
+
+    border: 1px solid rgba(0, 255, 204, 0.2);
+    box-shadow: 0 0 30px rgba(0, 255, 204, 0.15), inset 0 0 15px rgba(0, 255, 204, 0.05);
+    
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* GAMING TITLES */
+h1.main-title {
+    font-size: 24px;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 30px;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.neon-text {
+    color: #00ffcc;
+    text-shadow: 0 0 10px rgba(0, 255, 204, 0.6);
+}
+
+/* ADVANCED NEO-GRADIENT BUTTONS */
+button {
+    width: 240px;
+    padding: 14px;
+    margin: 10px auto;
+    display: block;
+
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+
+    background: linear-gradient(135deg, #00ffcc 0%, #00aaff 100%);
+    color: #05050a;
+    box-shadow: 0 4px 15px rgba(0, 255, 204, 0.3);
+    
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 255, 204, 0.5);
+    background: linear-gradient(135deg, #00ffdd 0%, #22b6ff 100%);
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+/* INPUT COMPONENT */
+input {
+    width: 216px;
+    padding: 14px;
+    margin-bottom: 15px;
+
+    border-radius: 12px;
+    border: 2px solid rgba(0, 255, 204, 0.3);
+    background: rgba(0, 0, 0, 0.4);
+    color: #ffffff;
+
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-align: center;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+input:focus {
+    border-color: #00ffcc;
+    box-shadow: 0 0 12px rgba(0, 255, 204, 0.4);
+}
+
+/* GAMEPLAY BOARD GRID */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 110px);
+    gap: 12px;
+    margin-top: 25px;
+}
+
+/* CELLS */
+.cell {
+    width: 110px;
+    height: 110px;
+    margin: 0;
+
+    font-size: 50px;
+    font-weight: 900;
+    font-family: 'Arial Black', Gadget, sans-serif;
+
+    border-radius: 16px;
+    background: #0d0d18;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: #00ffcc;
+
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 0 8px rgba(255,255,255,0.02);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    transition: all 0.2s ease;
+}
+
+.cell:hover:not(:disabled) {
+    transform: scale(1.04);
+    background: #141424;
+    border-color: rgba(0, 255, 204, 0.4);
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.25);
+}
+
+.cell:disabled {
+    cursor: not-allowed;
+}
+
+/* LIVE TIMELY STATUS FOOTER */
+#status {
+    margin-top: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #00ffcc;
+    text-shadow: 0 0 8px rgba(0, 255, 204, 0.3);
+}
+
+/* ANIMATIONS */
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+}
+</style>
+</head>
+
+<body>
+
+<h1 class="main-title">Multiplayer <span class="neon-text">Tic Tac Toe</span></h1>
+
+<div id="lobby" class="lobby-box">
+    <button onclick="createRoom()">Create Room</button>
+    <button onclick="showJoinLobby()">Join Room</button>
+    <button onclick="randomMatch()">Random Match</button>
+</div>
+
+<div id="joinLobby" class="lobby-box" style="display:none;">
+    <input id="roomCode" placeholder="ENTER CODE" maxlength="6">
+    <button onclick="joinRoom()">Join Match</button>
+    <button onclick="showHomeLobby()" style="background: transparent; color: #ff4d4d; border: 1px solid #ff4d4d; box-shadow: none; margin-top: 15px;">Back</button>
+</div>
+
+<div id="waitingLobby" class="lobby-box" style="display:none;">
+    <h2 style="color: #00aaff; margin-top: 0;">Waiting For Opponent</h2>
+    <p id="roomText" style="font-size: 18px; letter-spacing: 1px; font-weight: bold; margin-bottom: 0;"></p>
+</div>
+
+<div id="status">Choose an option to start.</div>
+
+<div class="grid" id="board" style="display:none;"></div>
+
+<script>
+const ws = new WebSocket("ws://localhost:8080");
+
+const statusDiv = document.getElementById("status");
+const board = document.getElementById("board");
+
+let myRole = "";
+let myTurn = false;
+let gameOver = false;
+const cells = [];
+
+// Board initialization loop
+for(let i=0; i<9; i++){
+    const cell = document.createElement("button");
+    cell.className = "cell";
+    cell.disabled = true;
+    cell.addEventListener("click", () => makeMove(i));
+    board.appendChild(cell);
+    cells.push(cell);
+}
+
+/* --- SCREEN TRANSITION NAVIGATION SYSTEM --- */
+function showHomeLobby() {
+    document.getElementById("lobby").style.display = "block";
+    document.getElementById("joinLobby").style.display = "none";
+    document.getElementById("waitingLobby").style.display = "none";
+}
+
+function showJoinLobby() {
+    document.getElementById("lobby").style.display = "none";
+    document.getElementById("joinLobby").style.display = "block";
+    document.getElementById("waitingLobby").style.display = "none";
+}
+
+function showWaitingLobby(message) {
+    document.getElementById("lobby").style.display = "none";
+    document.getElementById("joinLobby").style.display = "none";
+    document.getElementById("waitingLobby").style.display = "block";
+    document.getElementById("roomText").innerText = message;
+}
+
+/* --- WEBSOCKET MESSAGING ARCHITECTURE --- */
+function safeSend(data) {
+    if (ws.readyState !== 1) {
+        alert("Establishing socket channel connection... try again.");
+        return false;
+    }
+    ws.send(JSON.stringify(data));
+    return true;
+}
+
+function randomMatch(){
+    if(safeSend({ type: "random-match" })) {
+        statusDiv.innerText = "Searching for global player...";
+    }
+}
+
+function createRoom(){
+    if(safeSend({ type: "create-room" })) {
+        showWaitingLobby("Generating custom match room...");
+    }
+}
+
+function joinRoom(){
+    const code = document.getElementById("roomCode").value.trim().toUpperCase();
+    if(!code){
+        alert("Please enter a valid room token sequence.");
+        return;
+    }
+    if(safeSend({ type: "join-room", roomCode: code })) {
+        showWaitingLobby("Syncing to Room: " + code);
+    }
+}
+
+function checkWinner(){
+    const patterns = [
+        [0,1,2], [3,4,5], [6,7,8],
+        [0,3,6], [1,4,7], [2,5,8],
+        [0,4,8], [2,4,6]
+    ];
+    for(const pattern of patterns){
+        const [a,b,c] = pattern;
+        if(
+            cells[a].innerText &&
+            cells[a].innerText === cells[b].innerText &&
+            cells[a].innerText === cells[c].innerText
+        ){
+            return cells[a].innerText;
+        }
+    }
+    return null;
+}
+
+function checkDraw(){
+    return cells.every(cell => cell.innerText !== "");
+}
+
+function endGame(message){
+    gameOver = true;
+    statusDiv.innerText = message;
+    cells.forEach(cell => { cell.disabled = true; });
+}
+
+function refreshBoard(){
+    cells.forEach(cell => {
+        if(gameOver){
+            cell.disabled = true;
+        } else {
+            cell.disabled = cell.innerText !== "" || !myTurn;
+        }
+    });
+}
+
+function makeMove(index){
+    if(gameOver || !myTurn || cells[index].innerText !== "") return;
+
+    cells[index].innerText = myRole;
+    // Applied stylistic Neon variations depending on assigned role
+    cells[index].style.color = myRole === "X" ? "#ff4d4d" : "#4da6ff";
+    cells[index].style.textShadow = myRole === "X" ? "0 0 15px rgba(255,77,77,0.7)" : "0 0 15px rgba(77,166,255,0.7)";
+
+    safeSend({ type: "move", index: index });
+    myTurn = false;
+
+    const winner = checkWinner();
+    if(winner){
+        endGame(winner === myRole ? "Victory Achieved!" : "Defeat!");
+        return;
+    }
+    if(checkDraw()){
+        endGame("Tie Protocol Initiated!");
+        return;
+    }
+
+    statusDiv.innerText = "Opponent Processing Move...";
+    refreshBoard();
+}
+
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+
+    switch(data.type){
+        case "waiting":
+            statusDiv.innerText = "Searching the opponent...";
+            break;
+
+        case "room-created":
+            showWaitingLobby("ROOM CODE: " + data.roomCode);
+            break;
+
+        case "start":
+            document.getElementById("lobby").style.display = "none";
+            document.getElementById("joinLobby").style.display = "none";
+            document.getElementById("waitingLobby").style.display = "none";
+            board.style.display = "grid";
+
+            myRole = data.role;
+            myTurn = myRole === "X";
+            statusDiv.innerText = `Identity Assigned: Player ${myRole}`;
+            refreshBoard();
+            break;
+
+        case "opponent-move":
+            const opponentRole = myRole === "X" ? "O" : "X";
+            cells[data.index].innerText = opponentRole;
+            cells[data.index].style.color = opponentRole === "X" ? "#ff4d4d" : "#4da6ff";
+            cells[data.index].style.textShadow = opponentRole === "X" ? "0 0 15px rgba(255,77,77,0.7)" : "0 0 15px rgba(77,166,255,0.7)";
+
+            const winner = checkWinner();
+            if(winner){
+                endGame(winner === myRole ? "Victory Achieved!" : "Defeat!");
+                return;
+            }
+            if(checkDraw()){
+                endGame("Tie Protocol Initiated!");
+                return;
+            }
+
+            myTurn = true;
+            statusDiv.innerText = "Your Turn";
+            refreshBoard();
+            break;
+
+        case "error":
+            alert(data.message);
+            showHomeLobby();
+            break;
+
+        case "reset":
+            alert(data.message);
+            location.reload();
+            break;
+    }
+};
+
+ws.onerror = () => {
+    statusDiv.innerText = "Handshake Failed: Server offline.";
+};
+</script>
+</body>
+</html>
